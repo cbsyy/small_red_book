@@ -66,3 +66,41 @@ model ImageStyle {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
+// 背景板库 - 存储用户上传/生成的背景图
+model BackgroundImage {
+  id            String   @id @default(cuid())
+  name          String            // 名称
+  description   String?           // 描述
+
+  // 来源
+  source        String   @default("upload")  // upload | prompt | preset
+
+  // 如果是 prompt 生成的，记录原始 prompt
+  prompt        String?
+
+  // 图片路径（本地存储或 URL）
+  imageUrl      String            // 图片地址
+  thumbnailUrl  String?           // 缩略图地址
+
+  // 图片信息
+  width         Int      @default(0)
+  height        Int      @default(0)
+  aspectRatio   String   @default("3:4")
+  fileSize      Int      @default(0)
+
+  // 分类
+  tags          String   @default("[]")  // JSON 数组存储标签
+  category      String?           // 分类
+
+  // 使用统计
+  useCount      Int      @default(0)
+  isFavorite    Boolean  @default(false)
+
+  // 是否系统预设
+  isPreset      Boolean  @default(false)
+
+  // 时间
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
