@@ -43,3 +43,6 @@ next-env.d.ts
 # database
 *.db
 prisma/dev.db
+
+# sensitive config
+data/models.json
