@@ -1,6 +1,6 @@
 'use client';
 
-import { RiFileTextLine, RiListCheck2, RiQuillPenLine, RiImageLine, RiCheckLine, RiSettings4Line } from 'react-icons/ri';
+import { RiFileTextLine, RiListCheck2, RiQuillPenLine, RiImageLine, RiCheckLine, RiSettings4Line, RiEdit2Line } from 'react-icons/ri';
 import { useCreationStore, type WorkflowStep } from '@/store/useCreationStore';
 
 interface StepIndicatorProps {
@@ -12,20 +12,20 @@ const standardSteps: { key: WorkflowStep; label: string; icon: React.ReactNode }
   { key: 'parsing', label: '解析内容', icon: <RiFileTextLine /> },
   { key: 'configure', label: '选择模式', icon: <RiSettings4Line /> },
   { key: 'outline', label: '编辑大纲', icon: <RiListCheck2 /> },
-  { key: 'drafting', label: '生成文案', icon: <RiQuillPenLine /> },
+  { key: 'prompt-edit', label: '编辑Prompt', icon: <RiEdit2Line /> },
   { key: 'visual', label: '生成图片', icon: <RiImageLine /> },
 ];
 
-// 快速模式步骤（跳过大纲，但保留文案）
+// 快速模式步骤
 const quickSteps: { key: WorkflowStep; label: string; icon: React.ReactNode }[] = [
   { key: 'parsing', label: '解析内容', icon: <RiFileTextLine /> },
   { key: 'configure', label: '配置模式', icon: <RiSettings4Line /> },
-  { key: 'drafting', label: '生成文案', icon: <RiQuillPenLine /> },
+  { key: 'prompt-edit', label: '编辑Prompt', icon: <RiEdit2Line /> },
   { key: 'visual', label: '生成图片', icon: <RiImageLine /> },
 ];
 
-const standardStepOrder: WorkflowStep[] = ['parsing', 'configure', 'outline', 'drafting', 'visual'];
-const quickStepOrder: WorkflowStep[] = ['parsing', 'configure', 'drafting', 'visual'];
+const standardStepOrder: WorkflowStep[] = ['parsing', 'configure', 'outline', 'prompt-edit', 'visual'];
+const quickStepOrder: WorkflowStep[] = ['parsing', 'configure', 'prompt-edit', 'visual'];
 
 export default function StepIndicator({ currentStep }: StepIndicatorProps) {
   const { generationMode } = useCreationStore();
