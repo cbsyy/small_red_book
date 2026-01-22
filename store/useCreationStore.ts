@@ -1,0 +1,309 @@
+import { create } from 'zustand';
+
+// 工作流步骤
+export type WorkflowStep = 'idle' | 'parsing' | 'configure' | 'outline' | 'drafting' | 'visual';
+
+// 输入类型
+export type InputType = 'link' | 'upload' | 'text';
+
+// 风格类型
+export type VibeType = 'viral' | 'minimal' | 'pro';
+
+// 生成模式
+export type GenerationMode = 'standard' | 'quick';
+
+// 图片数量选项
+export type ImageCountOption = 1 | 3 | 6 | 9;
+
+// 大纲项
+export interface OutlineItem {
+  id: string;
+  pageNumber: number;
+  title: string;
+  content: string;
+  imagePrompt: string;
+}
+
+// 快速模式提示词
+export interface QuickPrompt {
+  id: string;
+  angle: string;
+  angleDescription: string;
+  prompt: string;
+  contentBasis: string;
+  edited: boolean;
+}
+
+// 生成的图片
+export interface GeneratedImage {
+  id: string;
+  prompt: string;
+  url: string;
+  status: 'pending' | 'generating' | 'completed' | 'error';
+  error?: string;
+}
+
+interface CreationState {
+  // 当前步骤
+  step: WorkflowStep;
+
+  // 输入配置
+  inputType: InputType;
+  vibe: VibeType;
+
+  // 生成模式配置（新增）
+  generationMode: GenerationMode;
+  imageCount: ImageCountOption;
+
+  // 原始输入
+  inputUrl: string;
+  inputFile: File | null;
+  inputText: string;
+
+  // Step 1: 解析后的原始文本
+  originalText: string;
+  originalTitle: string;
+  isParsingContent: boolean;
+
+  // Step 2: 大纲
+  outline: OutlineItem[];
+  isGeneratingOutline: boolean;
+
+  // Step 3: 小红书文案
+  finalCopy: string;
+  isGeneratingCopy: boolean;
+
+  // Step 4: 图像生成
+  generatedImages: GeneratedImage[];
+  isGeneratingImages: boolean;
+
+  // 快速模式提示词（新增）
+  quickPrompts: QuickPrompt[];
+  isGeneratingQuickPrompts: boolean;
+
+  // 选中的 AI Profile ID
+  selectedProfileId: string | null;
+
+  // 选中的 Prompt 配置 ID
+  selectedTextPromptId: string | null;
+  selectedImagePromptId: string | null;
+
+  // 错误信息
+  error: string | null;
+
+  // Actions
+  setStep: (step: WorkflowStep) => void;
+  setInputType: (type: InputType) => void;
+  setVibe: (vibe: VibeType) => void;
+  setInputUrl: (url: string) => void;
+  setInputFile: (file: File | null) => void;
+  setInputText: (text: string) => void;
+
+  // 模式配置 actions（新增）
+  setGenerationMode: (mode: GenerationMode) => void;
+  setImageCount: (count: ImageCountOption) => void;
+
+  // Step 1 actions
+  setOriginalText: (text: string) => void;
+  setOriginalTitle: (title: string) => void;
+  setIsParsingContent: (loading: boolean) => void;
+
+  // Step 2 actions
+  setOutline: (outline: OutlineItem[]) => void;
+  updateOutlineItem: (id: string, updates: Partial<OutlineItem>) => void;
+  addOutlineItem: () => void;
+  removeOutlineItem: (id: string) => void;
+  setIsGeneratingOutline: (loading: boolean) => void;
+
+  // Step 3 actions
+  setFinalCopy: (copy: string) => void;
+  setIsGeneratingCopy: (loading: boolean) => void;
+
+  // Step 4 actions
+  setGeneratedImages: (images: GeneratedImage[]) => void;
+  updateGeneratedImage: (id: string, updates: Partial<GeneratedImage>) => void;
+  setIsGeneratingImages: (loading: boolean) => void;
+
+  // 快速模式 actions（新增）
+  setQuickPrompts: (prompts: QuickPrompt[]) => void;
+  updateQuickPrompt: (id: string, updates: Partial<QuickPrompt>) => void;
+  setIsGeneratingQuickPrompts: (loading: boolean) => void;
+
+  // Profile
+  setSelectedProfileId: (id: string | null) => void;
+
+  // Prompt 配置
+  setSelectedTextPromptId: (id: string | null) => void;
+  setSelectedImagePromptId: (id: string | null) => void;
+
+  // Error
+  setError: (error: string | null) => void;
+
+  // 重置
+  reset: () => void;
+  resetToStep: (step: WorkflowStep) => void;
+}
+
+const generateId = () => Math.random().toString(36).substring(2) + Date.now().toString(36);
+
+const initialState = {
+  step: 'idle' as WorkflowStep,
+  inputType: 'link' as InputType,
+  vibe: 'viral' as VibeType,
+  generationMode: 'standard' as GenerationMode,
+  imageCount: 3 as ImageCountOption,
+  inputUrl: '',
+  inputFile: null,
+  inputText: '',
+  originalText: '',
+  originalTitle: '',
+  isParsingContent: false,
+  outline: [],
+  isGeneratingOutline: false,
+  finalCopy: '',
+  isGeneratingCopy: false,
+  generatedImages: [],
+  isGeneratingImages: false,
+  quickPrompts: [],
+  isGeneratingQuickPrompts: false,
+  selectedProfileId: null,
+  selectedTextPromptId: null,
+  selectedImagePromptId: null,
+  error: null,
+};
+
+export const useCreationStore = create<CreationState>((set, get) => ({
+  ...initialState,
+
+  // Basic setters
+  setStep: (step) => set({ step, error: null }),
+  setInputType: (inputType) => set({ inputType }),
+  setVibe: (vibe) => set({ vibe }),
+  setInputUrl: (inputUrl) => set({ inputUrl }),
+  setInputFile: (inputFile) => set({ inputFile }),
+  setInputText: (inputText) => set({ inputText }),
+
+  // 模式配置 actions
+  setGenerationMode: (generationMode) => set({ generationMode }),
+  setImageCount: (imageCount) => set({ imageCount }),
+
+  // Step 1 actions
+  setOriginalText: (originalText) => set({ originalText }),
+  setOriginalTitle: (originalTitle) => set({ originalTitle }),
+  setIsParsingContent: (isParsingContent) => set({ isParsingContent }),
+
+  // Step 2 actions
+  setOutline: (outline) => set({ outline }),
+  updateOutlineItem: (id, updates) =>
+    set((state) => ({
+      outline: state.outline.map((item) =>
+        item.id === id ? { ...item, ...updates } : item
+      ),
+    })),
+  addOutlineItem: () =>
+    set((state) => ({
+      outline: [
+        ...state.outline,
+        {
+          id: generateId(),
+          pageNumber: state.outline.length + 1,
+          title: '',
+          content: '',
+          imagePrompt: '',
+        },
+      ],
+    })),
+  removeOutlineItem: (id) =>
+    set((state) => ({
+      outline: state.outline
+        .filter((item) => item.id !== id)
+        .map((item, index) => ({ ...item, pageNumber: index + 1 })),
+    })),
+  setIsGeneratingOutline: (isGeneratingOutline) => set({ isGeneratingOutline }),
+
+  // Step 3 actions
+  setFinalCopy: (finalCopy) => set({ finalCopy }),
+  setIsGeneratingCopy: (isGeneratingCopy) => set({ isGeneratingCopy }),
+
+  // Step 4 actions
+  setGeneratedImages: (generatedImages) => set({ generatedImages }),
+  updateGeneratedImage: (id, updates) =>
+    set((state) => ({
+      generatedImages: state.generatedImages.map((img) =>
+        img.id === id ? { ...img, ...updates } : img
+      ),
+    })),
+  setIsGeneratingImages: (isGeneratingImages) => set({ isGeneratingImages }),
+
+  // 快速模式 actions
+  setQuickPrompts: (quickPrompts) => set({ quickPrompts }),
+  updateQuickPrompt: (id, updates) =>
+    set((state) => ({
+      quickPrompts: state.quickPrompts.map((p) =>
+        p.id === id ? { ...p, ...updates, edited: true } : p
+      ),
+    })),
+  setIsGeneratingQuickPrompts: (isGeneratingQuickPrompts) => set({ isGeneratingQuickPrompts }),
+
+  // Profile
+  setSelectedProfileId: (selectedProfileId) => set({ selectedProfileId }),
+
+  // Prompt 配置
+  setSelectedTextPromptId: (selectedTextPromptId) => set({ selectedTextPromptId }),
+  setSelectedImagePromptId: (selectedImagePromptId) => set({ selectedImagePromptId }),
+
+  // Error
+  setError: (error) => set({ error }),
+
+  // Reset
+  reset: () => set(initialState),
+  resetToStep: (step) => {
+    switch (step) {
+      case 'idle':
+        set(initialState);
+        break;
+      case 'parsing':
+        set({
+          step,
+          outline: [],
+          finalCopy: '',
+          generatedImages: [],
+          quickPrompts: [],
+          error: null,
+        });
+        break;
+      case 'configure':
+        set({
+          step,
+          outline: [],
+          finalCopy: '',
+          generatedImages: [],
+          quickPrompts: [],
+          error: null,
+        });
+        break;
+      case 'outline':
+        set({
+          step,
+          finalCopy: '',
+          generatedImages: [],
+          error: null,
+        });
+        break;
+      case 'drafting':
+        set({
+          step,
+          generatedImages: [],
+          error: null,
+        });
+        break;
+      case 'visual':
+        set({
+          step,
+          generatedImages: [],
+          error: null,
+        });
+        break;
+    }
+  },
+}));

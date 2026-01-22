@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ping:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npx prisma generate)",
+      "Bash(taskkill:*)",
+      "Bash(rd /s /q \"F:\\\\yyds\\\\small_red_book\\\\.next\\\\dev\\\\lock\")",
+      "Bash(rd /s /q \"F:\\\\yyds\\\\small_red_book\\\\.next\")",
+      "Bash(npx prisma:*)"
+    ]
+  }
+}

@@ -1,0 +1,68 @@
+// ====== prisma/schema.prisma ======
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// AI 配置文件 - 按用途区分模型
+model AIProfile {
+  id          String   @id @default(cuid())
+  name        String   @unique  // 配置名称，如 "GPT-4o 文本"、"FLUX 图像"
+  description String?           // 配置描述
+
+  // 模型用途
+  kind        String   @default("universal")  // text | image | video | universal
+
+  // 端点配置
+  provider    String   @default("openai")     // 供应商标识: openai | azure | siliconflow | zhipu | custom 等
+  baseURL     String                          // API 端点地址
+  apiKey      String                          // API Key
+  model       String                          // 模型 ID，如 gpt-4o, FLUX.1-dev, dall-e-3
+
+  // 可选配置
+  systemPrompt String?          // 自定义系统提示词（仅文本模型有效）
+
+  // 状态
+  isDefault   Boolean  @default(false)  // 是否为默认配置
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Prompt 配置 - 文本和图像生成提示词
+model PromptConfig {
+  id          String   @id @default(cuid())
+  name        String   @unique  // 配置名称
+  description String?           // 配置描述
+
+  // Prompt 类型
+  kind        String   @default("text")  // text | image
+
+  // Prompt 内容
+  content     String             // Prompt 内容
+
+  // 状态
+  isDefault   Boolean  @default(false)
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 图像风格标签 - 用于图像生成的风格选择
+model ImageStyle {
+  id            String   @id @default(cuid())
+  name          String   @unique  // 中文名称（动漫、科幻）
+  nameEn        String            // 英文名称（anime, sci-fi）
+  icon          String?           // 图标/emoji
+  promptSnippet String            // 对应的提示词片段
+
+  // 状态
+  enabled       Boolean  @default(true)
+  order         Int      @default(0)  // 排序
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

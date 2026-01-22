@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>予露 | 让你的内容直通爆款</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --accent-color: #FF2442; 
+            --accent-hover: #E61E3B;
+            --text-primary: #1F1F1F;
+            --text-secondary: #707070;
+            --dock-bg: rgba(255, 255, 255, 0.75); 
+            --input-bg: rgba(0, 0, 0, 0.04);
+            --radius-xl: 32px;
+            --radius-lg: 20px;
+            --ease: cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #000;
+            overflow: hidden;
+        }
+
+        /* 沉浸式背景系统 */
+        .bg-container {
+            position: fixed;
+            top: -5%; left: -5%; width: 110%; height: 110%;
+            z-index: -2;
+            transition: transform 0.6s var(--ease);
+        }
+        .bg-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover;
+            background-position: center;
+            transition: opacity 1.2s ease-in-out;
+            opacity: 0;
+            filter: brightness(0.9);
+        }
+        .bg-layer.active { opacity: 1; }
+        .bg-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.3) 100%);
+            backdrop-filter: blur(8px);
+            z-index: -1;
+        }
+
+        /* 顶部导航 */
+        .header {
+            position: absolute;
+            top: 0; width: 100%;
+            padding: 32px 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+        .logo { 
+            font-family: 'Playfair Display', serif; 
+            font-size: 28px; font-weight: 700; letter-spacing: -0.5px;
+        }
+        .nav-links { display: flex; gap: 36px; align-items: center; }
+        .nav-link {
+            color: var(--text-primary);
+            text-decoration: none; font-weight: 600; font-size: 15px;
+            opacity: 0.7; transition: 0.3s;
+        }
+        .nav-link:hover { opacity: 1; color: var(--accent-color); }
+
+        .float-refresh {
+            width: 44px; height: 44px;
+            background: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            transition: all 0.5s var(--ease); color: var(--accent-color);
+        }
+        .float-refresh:hover { transform: rotate(180deg) scale(1.1); }
+
+        /* 主舞台 */
+        .hero-stage {
+            text-align: center;
+            max-width: 840px; width: 90%;
+            margin-top: -20px;
+            animation: heroReveal 1.2s var(--ease);
+            z-index: 10;
+        }
+        .main-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(40px, 6vw, 72px);
+            line-height: 1.05; margin-bottom: 24px;
+        }
+        .highlight { color: var(--accent-color); font-style: italic; }
+        .sub-title { 
+            font-size: 18px; color: var(--text-secondary); 
+            margin-bottom: 56px; font-weight: 500;
+        }
+
+        /* 输入面板 (Input Dock) */
+        .input-dock {
+            background: var(--dock-bg);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: var(--radius-xl);
+            padding: 28px;
+            box-shadow: 0 40px 80px -20px rgba(0,0,0,0.12);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+        }
+
+        .dock-tabs { 
+            display: flex; gap: 6px; background: rgba(0,0,0,0.05); 
+            padding: 6px; border-radius: 18px; 
+            margin-bottom: 28px; width: fit-content; 
+        }
+        .tab-item { 
+            padding: 10px 24px; font-weight: 700; font-size: 14px; 
+            color: var(--text-secondary); cursor: pointer; 
+            border-radius: 14px; transition: all 0.3s var(--ease); 
+            display: flex; align-items: center; gap: 8px; 
+        }
+        .tab-item.active { 
+            background: white; color: var(--accent-color); 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+        }
+
+        /* 输入控件 */
+        .input-control { display: none; animation: fadeIn 0.4s ease; position: relative; }
+        .input-control.active { display: block; }
+
+        .input-wrapper { position: relative; display: flex; align-items: center; }
+        .input-icon-left {
+            position: absolute; left: 24px;
+            font-size: 22px; color: var(--text-secondary);
+            pointer-events: none; display: flex; align-items: center;
+        }
+
+        .dock-input {
+            width: 100%; height: 68px;
+            padding: 0 24px 0 64px;
+            border: 2px solid transparent; background: var(--input-bg); 
+            border-radius: var(--radius-lg); font-size: 16px;
+            outline: none; transition: 0.3s var(--ease); 
+        }
+        .text-area-input {
+            width: 100%; padding: 24px;
+            border: 2px solid transparent; background: var(--input-bg);
+            border-radius: var(--radius-lg); font-size: 16px;
+            outline: none; transition: 0.3s var(--ease); height: 160px;
+            resize: none; font-family: inherit;
+        }
+        
+        /* 状态样式 */
+        .dock-input:focus, .text-area-input:focus { 
+            background: white; border-color: var(--accent-color); 
+            box-shadow: 0 0 0 6px rgba(255, 36, 66, 0.08); 
+        }
+        .input-error { border-color: var(--accent-color) !important; color: var(--accent-color); }
+
+        /* 字数统计 */
+        .char-counter {
+            position: absolute; bottom: -24px; right: 8px;
+            font-size: 12px; font-weight: 600; color: var(--text-secondary);
+            transition: 0.3s;
+        }
+        .char-counter.limit-exceeded { color: var(--accent-color); }
+
+        /* 上传区域增强 */
+        .upload-zone {
+            border: 2px dashed rgba(0,0,0,0.1); border-radius: 20px; 
+            padding: 40px; text-align: center; cursor: pointer;
+            transition: all 0.3s var(--ease); background: rgba(0,0,0,0.02);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .upload-zone.drag-over {
+            border-color: var(--accent-color);
+            background: rgba(255, 36, 66, 0.05);
+            transform: scale(1.01);
+        }
+        
+        /* 文件列表展示 */
+        .file-item {
+            margin-top: 16px; padding: 12px 20px;
+            background: white; border-radius: 14px;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            animation: slideIn 0.3s var(--ease);
+        }
+        .file-info { display: flex; align-items: center; gap: 12px; overflow: hidden; }
+        .file-name { 
+            font-weight: 600; font-size: 14px; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+            max-width: 300px;
+        }
+        .file-size { font-size: 12px; color: var(--text-secondary); }
+        .file-remove { 
+            color: var(--text-secondary); cursor: pointer; font-size: 18px;
+            transition: 0.3s; padding: 4px;
+        }
+        .file-remove:hover { color: var(--accent-color); }
+
+        /* 操作栏 */
+        .action-bar { 
+            display: flex; align-items: center; justify-content: space-between; 
+            margin-top: 28px; padding-top: 24px; 
+            border-top: 1px solid rgba(0,0,0,0.06); 
+        }
+        .vibe-selector { display: flex; gap: 10px; }
+        .vibe-chip { 
+            padding: 10px 20px; background: rgba(0,0,0,0.04); 
+            border-radius: 100px; font-size: 14px; font-weight: 700; 
+            color: var(--text-secondary); cursor: pointer; transition: 0.3s; 
+        }
+        .vibe-chip.active { background: var(--text-primary); color: white; }
+
+        .magic-btn {
+            height: 56px; padding: 0 36px;
+            background: var(--accent-color); color: white; 
+            border: none; border-radius: 100px; font-size: 16px; font-weight: 700; 
+            cursor: pointer; transition: 0.4s var(--ease); 
+            display: flex; align-items: center; gap: 10px; 
+            box-shadow: 0 16px 32px -8px rgba(255, 36, 66, 0.4);
+        }
+        .magic-btn:hover:not(:disabled) { transform: translateY(-3px); background: var(--accent-hover); }
+        .magic-btn:disabled { 
+            background: #d1d1d1; color: #fdfdfd; 
+            cursor: not-allowed; transform: none; box-shadow: none; 
+        }
+
+        /* 通知系统 */
+        .notification { 
+            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(100px); 
+            background: white; padding: 16px 28px; border-radius: 16px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1); 
+            display: flex; align-items: center; gap: 12px; font-weight: 600;
+            opacity: 0; transition: 0.4s var(--ease); z-index: 1000;
+        }
+        .notification.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .notification.success { color: #4CAF50; border-left: 5px solid #4CAF50; }
+        .notification.error { color: var(--accent-color); border-left: 5px solid var(--accent-color); }
+        .notification.info { color: #2196F3; border-left: 5px solid #2196F3; }
+
+        .footer { position: absolute; bottom: 32px; width: 100%; text-align: center; font-size: 13px; color: var(--text-secondary); font-weight: 600; }
+
+        @keyframes heroReveal { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="bg-container" id="bg-container">
+        <div class="bg-layer active" id="bg-1" style="background-image: url('https://images.unsplash.com/photo-1516483638261-f4dbaf036963?q=80&w=2000&auto=format&fit=crop')"></div>
+        <div class="bg-layer" id="bg-2"></div>
+    </div>
+    <div class="bg-overlay"></div>
+
+    <header class="header">
+        <div class="logo">YuLu</div>
+        <nav class="nav-links">
+            <a href="#" class="nav-link">功能</a>
+            <a href="#" class="nav-link">价格</a>
+            <a href="#" class="nav-link">关于</a>
+            <a href="#" class="nav-link">登录</a>
+            <div class="float-refresh" title="切换背景" onclick="changeBackground()">
+                <i class="ri-refresh-line"></i>
+            </div>
+        </nav>
+    </header>
+
+    <main class="hero-stage">
+        <h1 class="main-title">Capture the <span class="highlight">Essence.</span></h1>
+        <p class="sub-title">让每一篇内容都拥有瞬间引爆社交媒体的魔力</p>
+
+        <div class="input-dock">
+            <div class="dock-tabs" id="dock-tabs">
+                <div class="tab-item active" data-target="link"><i class="ri-link-m"></i> 链接</div>
+                <div class="tab-item" data-target="upload"><i class="ri-folder-upload-line"></i> 上传</div>
+                <div class="tab-item" data-target="text"><i class="ri-text"></i> 文本</div>
+            </div>
+
+            <div class="input-container">
+                <div class="input-control active" id="link-input">
+                    <div class="input-wrapper">
+                        <div class="input-icon-left"><i class="ri-links-fill"></i></div>
+                        <input type="text" id="url-field" class="dock-input" placeholder="粘贴公众号或网页链接..." autofocus>
+                    </div>
+                </div>
+
+                <div class="input-control" id="upload-input">
+                    <div class="upload-zone" id="upload-zone">
+                        <i class="ri-upload-cloud-2-line" style="font-size: 32px; color: var(--accent-color);"></i>
+                        <p style="margin-top: 10px; font-weight: 600; color: var(--text-secondary);" id="upload-status">点击选择或拖拽 PDF / DOCX / TXT</p>
+                        <input type="file" id="file-hidden-input" accept=".pdf,.docx,.txt" style="display: none;">
+                    </div>
+                    <div id="file-list-container"></div>
+                </div>
+
+                <div class="input-control" id="text-input">
+                    <textarea class="text-area-input" id="text-field" placeholder="在此输入需要转换的文字内容..."></textarea>
+                    <div class="char-counter" id="char-counter">0 / 5000</div>
+                </div>
+            </div>
+
+            <div class="action-bar">
+                <div class="vibe-selector" id="vibe-selector">
+                    <div class="vibe-chip active" data-vibe="viral">🔥 爆款</div>
+                    <div class="vibe-chip" data-vibe="minimal">🌿 简约</div>
+                    <div class="vibe-chip" data-vibe="pro">💼 专业</div>
+                </div>
+                <button class="magic-btn" id="magic-btn">
+                    <i class="ri-sparkling-fill"></i> 开始魔法
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div class="notification" id="notification">
+        <i id="noti-icon" class="ri-checkbox-circle-fill"></i>
+        <span id="noti-msg">魔法施放成功！</span>
+    </div>
+
+    <footer class="footer">© 2026 Muse AI. 创意无限。</footer>
+
+    <script>
+        /**
+         * 0. 基础环境与全局状态
+         */
+        const MAX_TEXT_LENGTH = 5000;
+        const MAX_FILE_SIZE_MB = 10;
+        const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'txt'];
+        
+        let currentSelectedFile = null;
+        let isProcessing = false;
+
+        const bgImgs = [
+            "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?q=80&w=2000&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2000&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2000&auto=format&fit=crop"
+        ];
+        let currentBgIdx = 0;
+        let activeLayer = 0;
+
+        /**
+         * 1. 背景切换功能 (保留)
+         */
+        function changeBackground() {
+            let next = (currentBgIdx + 1) % bgImgs.length;
+            currentBgIdx = next;
+            const layers = [document.getElementById('bg-1'), document.getElementById('bg-2')];
+            const nextLayer = 1 - activeLayer;
+            layers[nextLayer].style.backgroundImage = `url('${bgImgs[currentBgIdx]}')`;
+            layers[nextLayer].classList.add('active');
+            layers[activeLayer].classList.remove('active');
+            activeLayer = nextLayer;
+        }
+
+        /**
+         * 2. 通知系统封装 (严禁改动 HTML)
+         */
+        function showNoti(msg, type = 'success') {
+            const noti = document.getElementById('notification');
+            const icon = document.getElementById('noti-icon');
+            const msgSpan = document.getElementById('noti-msg');
+
+            // 重置类名
+            noti.className = 'notification';
+            void noti.offsetWidth; // 触发回流重置动画
+            noti.classList.add('show', type);
+
+            // 切换图标
+            icon.className = type === 'success' ? 'ri-checkbox-circle-fill' : 
+                            type === 'error' ? 'ri-error-warning-fill' : 'ri-information-fill';
+            
+            msgSpan.innerText = msg;
+
+            setTimeout(() => noti.classList.remove('show'), 3000);
+        }
+
+        /**
+         * 3. Tab 切换逻辑 (保留并微调)
+         */
+        document.querySelectorAll('.tab-item').forEach(tab => {
+            tab.addEventListener('click', () => {
+                if (isProcessing) return;
+                document.querySelector('.tab-item.active').classList.remove('active');
+                tab.classList.add('active');
+                
+                const target = tab.getAttribute('data-target');
+                document.querySelectorAll('.input-control').forEach(el => el.classList.remove('active'));
+                document.getElementById(`${target}-input`).classList.add('active');
+                
+                const input = document.querySelector(`#${target}-input input, #${target}-input textarea`);
+                if(input) input.focus();
+
+                // 切换时重新检测字数限制状态，防止 tab 切换导致状态不一致
+                validateTextInput();
+            });
+        });
+
+        /**
+         * 4. Vibe 标签切换 (保留)
+         */
+        document.querySelectorAll('.vibe-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                if (isProcessing) return;
+                document.querySelector('.vibe-chip.active').classList.remove('active');
+                chip.classList.add('active');
+            });
+        });
+
+        /**
+         * 5. 拖拽 & 文件上传逻辑
+         */
+        const uploadZone = document.getElementById('upload-zone');
+        const fileHiddenInput = document.getElementById('file-hidden-input');
+        const fileListContainer = document.getElementById('file-list-container');
+
+        // 点击触发
+        uploadZone.addEventListener('click', () => fileHiddenInput.click());
+
+        // 拖拽视觉反馈
+        ['dragenter', 'dragover'].forEach(name => {
+            uploadZone.addEventListener(name, (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('drag-over');
+            });
+        });
+        ['dragleave', 'drop'].forEach(name => {
+            uploadZone.addEventListener(name, (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('drag-over');
+            });
+        });
+
+        // 放置处理
+        uploadZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) handleFileSelect(files[0]);
+        });
+
+        fileHiddenInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFileSelect(e.target.files[0]);
+        });
+
+        function handleFileSelect(file) {
+            const ext = file.name.split('.').pop().toLowerCase();
+            
+            // 校验后缀
+            if (!ALLOWED_EXTENSIONS.includes(ext)) {
+                showNoti('暂不支持该格式', 'error');
+                return;
+            }
+            // 校验大小
+            if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+                showNoti(`文件过大，请≤${MAX_FILE_SIZE_MB} MB`, 'error');
+                return;
+            }
+
+            currentSelectedFile = file;
+            renderFileList();
+            showNoti('文件上传成功', 'success');
+        }
+
+        function renderFileList() {
+            if (!currentSelectedFile) {
+                fileListContainer.innerHTML = '';
+                document.getElementById('upload-status').innerText = '点击选择或拖拽 PDF / DOCX / TXT';
+                return;
+            }
+
+            const sizeKB = (currentSelectedFile.size / 1024).toFixed(1);
+            fileListContainer.innerHTML = `
+                <div class="file-item">
+                    <div class="file-info">
+                        <i class="ri-file-text-line" style="color:var(--accent-color)"></i>
+                        <span class="file-name" title="${currentSelectedFile.name}">${currentSelectedFile.name}</span>
+                        <span class="file-size">${sizeKB} KB</span>
+                    </div>
+                    <i class="ri-close-line file-remove" id="remove-file-btn"></i>
+                </div>
+            `;
+            document.getElementById('upload-status').innerText = '已准备就绪';
+            
+            document.getElementById('remove-file-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                currentSelectedFile = null;
+                renderFileList();
+            });
+        }
+
+        /**
+         * 6. 文本输入统计 & 校验
+         */
+        const textField = document.getElementById('text-field');
+        const charCounter = document.getElementById('char-counter');
+        const magicBtn = document.getElementById('magic-btn');
+
+        textField.addEventListener('input', validateTextInput);
+
+        function validateTextInput() {
+            const activeTab = document.querySelector('.tab-item.active').getAttribute('data-target');
+            // 只在文本 tab 生效
+            if (activeTab !== 'text') {
+                magicBtn.disabled = false;
+                return;
+            }
+
+            const len = textField.value.length;
+            charCounter.innerText = `${len} / ${MAX_TEXT_LENGTH}`;
+
+            if (len > MAX_TEXT_LENGTH) {
+                textField.classList.add('input-error');
+                charCounter.classList.add('limit-exceeded');
+                magicBtn.disabled = true;
+            } else {
+                textField.classList.remove('input-error');
+                charCounter.classList.remove('limit-exceeded');
+                magicBtn.disabled = false;
+            }
+        }
+
+        /**
+         * 7. 链接校验逻辑
+         */
+        function validateUrl(url) {
+            if (!url.trim()) {
+                showNoti('链接不能为空', 'error');
+                return false;
+            }
+            const pattern = /^https?:\/\/.+/i;
+            if (!pattern.test(url)) {
+                showNoti('请输入合法链接', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        /**
+         * 8. 开始魔法 (提交核心)
+         */
+        magicBtn.addEventListener('click', submitProcess);
+
+        async function submitProcess() {
+            if (isProcessing) return;
+
+            const activeTab = document.querySelector('.tab-item.active').getAttribute('data-target');
+            const vibe = document.querySelector('.vibe-chip.active').getAttribute('data-vibe');
+            let content = "";
+
+            // 参数校验
+            if (activeTab === 'link') {
+                content = document.getElementById('url-field').value;
+                if (!validateUrl(content)) return;
+            } else if (activeTab === 'upload') {
+                if (!currentSelectedFile) {
+                    showNoti('请先上传文件', 'error');
+                    return;
+                }
+                content = currentSelectedFile.name; // 模拟获取
+            } else if (activeTab === 'text') {
+                content = textField.value;
+                if (!content.trim()) {
+                    showNoti('请输入文本内容', 'error');
+                    return;
+                }
+                if (content.length > MAX_TEXT_LENGTH) return; // 已被 input 事件拦截
+            }
+
+            // 收集参数打印
+            console.log({
+                type: activeTab,
+                content: content,
+                vibe: vibe
+            });
+
+            // 进入处理状态
+            isProcessing = true;
+            magicBtn.disabled = true;
+            const originalContent = magicBtn.innerHTML;
+            magicBtn.innerHTML = `<i class="ri-loader-4-line" style="animation: spin 1s infinite linear"></i> 处理中...`;
+
+            try {
+                // TODO: 在此替换为真实 API 请求
+                // await fetch('/api/v1/magic', { method: 'POST', body: JSON.stringify({...}) });
+                
+                await new Promise(resolve => setTimeout(resolve, 2000)); // 模拟延迟
+                
+                showNoti('爆款内容转换完成！', 'success');
+            } catch (err) {
+                showNoti('魔法施放失败，请重试', 'error');
+            } finally {
+                // 恢复状态
+                isProcessing = false;
+                magicBtn.disabled = false;
+                magicBtn.innerHTML = originalContent;
+                validateTextInput(); // 重新校验按钮置灰逻辑
+            }
+        }
+
+        /**
+         * 9. 键盘快捷键 & 视差逻辑
+         */
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + Enter
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                if (!magicBtn.disabled) submitProcess();
+            }
+
+            // Esc 清空
+            if (e.key === 'Escape') {
+                const activeTab = document.querySelector('.tab-item.active').getAttribute('data-target');
+                if (activeTab === 'link') {
+                    document.getElementById('url-field').value = '';
+                } else if (activeTab === 'text') {
+                    textField.value = '';
+                    validateTextInput();
+                } else if (activeTab === 'upload') {
+                    currentSelectedFile = null;
+                    renderFileList();
+                }
+            }
+        });
+
+        // 视差动效 (保留)
+        document.addEventListener('mousemove', (e) => {
+            const x = (window.innerWidth / 2 - e.pageX) / 80;
+            const y = (window.innerHeight / 2 - e.pageY) / 80;
+            const bg = document.getElementById('bg-container');
+            if(bg) bg.style.transform = `translate(${x}px, ${y}px)`;
+        });
+
+        // 初始化
+        window.onload = () => {
+            textField.value = ''; // 某些浏览器会缓存输入
+            validateTextInput();
+        };
+
+    </script>
+</body>
+</html>
